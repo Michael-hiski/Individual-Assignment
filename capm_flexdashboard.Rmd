@@ -159,7 +159,7 @@ Choose 5 stocks and a starting date
 Row {data-height=320}
 -----------------------------------------------------------------------
 
-### Growth of $100 invested in portfolio (blue) vs. SP500 (red)
+### Excess Returns of the Portfolio
 
 
 ```{r}
@@ -169,11 +169,9 @@ renderPlotly({
   
   fubar1 <- myportfolio_data() %>% 
     ggplot(aes(x=date))+
-    geom_line(aes(y=portfolio_growth),
+    geom_line(aes(y=monthly_return - SPY_return),
               colour="#001e62")+
-    geom_line(aes(y=sp500_growth),
-              colour="tomato")+
-    scale_y_continuous(labels = scales::dollar)+
+    scale_y_continuous(labels = scales::percent)+
     theme_minimal()+
     labs(x="", y="")  
     
@@ -186,45 +184,30 @@ renderPlotly({
 
 Row 2 {data-height=320}
 -----------------------------------------------------------------------
-### CAPM: Portfolio Returns vs Market Index (SP500) returns
+### Portfolio Growth (in USD) in excess of S&P500
 
 ```{r}
-#use highchart to get interactive scatter plot
-
-renderHighchart({
-
-myportfolio_data <- myportfolio_data()
-portfolio_model_augmented <- portfolio_model_augmented()
-
-highchart() %>% 
-  hc_title(text = "Portfolio Returns vs SP500 returns with Regression Line") %>% 
-  hc_add_series(portfolio_model_augmented, 
-                type = "scatter",
-                color = "cornflowerblue",
-                hcaes(x = round(SPY_return, 4), 
-                      y = round(monthly_return, 4),
-                      date = date), 
-                name = "Returns") %>%
-  hc_add_series(portfolio_model_augmented, 
-                 type = "line", 
-                 enableMouseTracking = FALSE,
-                 hcaes(x = SPY_return, y = .fitted), 
-                 name = "CAPM Beta = Slope of Line") %>% 
-  hc_xAxis(title = list(text = "Market Returns")) %>% 
-  hc_yAxis(title = list(text = "Portfolio Returns")) %>% 
-  hc_tooltip(formatter = JS("function(){
-     return ('portfolio: ' + this.y + '  SP500: ' + this.x +  
-     '  date: ' + this.point.date)}"))%>% 
-  hc_add_theme(hc_theme_flat())
-
+renderPlotly({
+  
+  fubar2 <- myportfolio_data() %>% 
+    ggplot(aes(x = date, y = portfolio_growth - sp500_growth)) +
+    geom_bar(stat = "identity", fill = palette_light()[[3]]) +
+    labs(x = "Year", y = "$ Return") +
+    geom_smooth(method = "lm") +
+    theme_tq() +
+    scale_color_tq() +
+    scale_y_continuous(labels = scales::dollar) 
+    
+  ggplotly(fubar2)
 })
+
 ```
 
 
 Row 3 {data-height=100}
 ----------------------------------
 
-### CAPM Model Results, fitted through entire time interval
+### Model Results, fitted through entire time interval
 
 ```{r}
 renderTable({
@@ -232,8 +215,7 @@ renderTable({
   myportfolio_data <- myportfolio_data()
   
     myportfolio_data %>% 
-    lm(monthly_return ~ SPY_return, data = .) %>% 
-    tidy(conf.int=TRUE) %>% 
-  mutate(term = c("alpha", "beta"))
-}, digits = 4)
+    tq_performance(Ra = monthly_return, Rb = NULL, performance_fun = table.AnnualizedReturns)
+})
+  
 ```
