@@ -1,6 +1,6 @@
 # Individual-Assignment
 
-Name: Michael Hiski
+Name: Michael Hiski;
 Student ID: 3746169
 
 See deliverables on Canvas.
